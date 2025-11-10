@@ -1068,47 +1068,21 @@ function showSolarMap() {
     try {
         modal.classList.add('active');
         
-        // Check if Google Maps is available
-        if (!window.googleMapsReady || !window.google || !window.google.maps) {
-            console.warn('Google Maps API not available - using fallback viewer');
-            useSolarViewerFallback();
-        } else if (!solarMapState.isInitialized) {
-            // Try Google Maps version
-            const mapResult = initializeSolarMap('solarMapCanvas');
-            if (!mapResult) {
-                console.warn('Failed to initialize Google Maps - falling back');
-                useSolarViewerFallback();
-            }
-        } else if (solarMapState.mapInstance) {
-            // Trigger map resize if it was already initialized
-            try {
-                google.maps.event.trigger(solarMapState.mapInstance, 'resize');
-            } catch (e) {
-                console.error('Error with Google Maps:', e);
-            }
+        // Always use fallback viewer (no Google Maps billing available)
+        if (typeof initializeSolarViewerFallback === 'function') {
+            initializeSolarViewerFallback();
         }
         
         // Populate region dropdown
-        if (window.usingSolarFallback && typeof populateSolarRegionSelect === 'function') {
+        if (typeof populateSolarRegionSelect === 'function') {
             populateSolarRegionSelect();
-        } else {
-            populateRegionDropdown();
         }
         
-        console.log('Solar map opened');
+        console.log('Solar Viewer opened (Fallback Mode)');
     } catch (error) {
-        console.error('Error opening solar map:', error);
-        console.log('Attempting fallback...');
-        
-        // Force fallback on any error
-        try {
-            useSolarViewerFallback();
-            populateSolarRegionSelect();
-        } catch (fallbackError) {
-            console.error('Fallback also failed:', fallbackError);
-            modal.classList.remove('active');
-            showToast('Could not load solar viewer.');
-        }
+        console.error('Error opening solar viewer:', error);
+        modal.classList.remove('active');
+        showToast('Could not open solar viewer.');
     }
 }
 
@@ -1146,28 +1120,10 @@ function populateRegionDropdown() {
 function changeMapRegion(regionKey) {
     if (!regionKey) return;
     
-    // If using fallback, use fallback function
-    if (window.usingSolarFallback && typeof changeSolarRegion === 'function') {
+    // Always use fallback viewer
+    if (typeof changeSolarRegion === 'function') {
         changeSolarRegion(regionKey);
-        return;
     }
-    
-    const regionData = getSolarDataByRegion(regionKey);
-    if (!regionData || !solarMapState.mapInstance) return;
-    
-    solarMapState.currentRegion = regionKey;
-    
-    // Center map on region
-    solarMapState.mapInstance.setCenter(regionData.center);
-    solarMapState.mapInstance.setZoom(8);
-    
-    // Update heatmap
-    if (SOLAR_MAP_CONFIG.enableHeatmap) {
-        addHeatmapLayer();
-    }
-    
-    saveMapPreferences();
-    console.log('Changed to region:', regionKey);
 }
 
 /**
@@ -1183,42 +1139,16 @@ function searchMapLocation() {
     }
     
     // Try to find in solar data first
-    const regionData = searchSolarLocation(query);
-    if (regionData) {
-        if (solarMapState.mapInstance) {
-            solarMapState.mapInstance.setCenter(regionData.center);
-            solarMapState.mapInstance.setZoom(8);
+    if (typeof searchSolarRegion === 'function') {
+        const found = searchSolarRegion(query);
+        if (found) {
+            input.value = '';
+            return;
         }
-        input.value = '';
-        return;
     }
     
-    // Use geocoder for custom locations
-    if (solarMapState.geocoder && solarMapState.mapInstance) {
-        solarMapState.geocoder.geocode({ address: query }, function(results, status) {
-            if (status === 'OK' && results.length > 0) {
-                const location = results[0].geometry.location;
-                solarMapState.mapInstance.setCenter(location);
-                solarMapState.mapInstance.setZoom(10);
-                
-                // Find nearest solar region
-                const nearest = findNearestSolarRegion(location.lat(), location.lng());
-                if (nearest) {
-                    const locInfo = generateLocationInfoPopup(
-                        location.lat(),
-                        location.lng(),
-                        nearest.solarHours,
-                        results[0].formatted_address
-                    );
-                    displayLocationInfo(locInfo);
-                }
-                
-                input.value = '';
-            } else {
-                showToast('Location not found. Try another search.');
-            }
-        });
-    }
+    showToast('Region not found. Try: Denver, Phoenix, LA, Seattle, etc.');
+    input.value = '';
 }
 
 /**
@@ -1261,96 +1191,32 @@ function displayLocationInfo(locInfo) {
  * Toggle between heatmap and markers layer
  */
 function toggleMapLayer(layerType) {
-    if (!solarMapState.mapInstance) return;
-    
-    solarMapState.currentLayerType = layerType;
-    
+    // Fallback mode - just update button styles
     const heatmapBtn = document.getElementById('heatmapLayerBtn');
     const markersBtn = document.getElementById('markersLayerBtn');
     
     if (layerType === 'heatmap') {
         if (heatmapBtn) heatmapBtn.classList.add('active');
         if (markersBtn) markersBtn.classList.remove('active');
-        
-        // Hide markers, show heatmap
-        if (solarMapState.heatmapInstance) {
-            solarMapState.heatmapInstance.setMap(solarMapState.mapInstance);
-        } else {
-            addHeatmapLayer();
-        }
-        
-        // Hide markers
-        solarMapState.markers.forEach(function(marker) {
-            marker.setMap(null);
-        });
     } else if (layerType === 'markers') {
-        if (markersBtn) markersBtn.classList.add('active');
         if (heatmapBtn) heatmapBtn.classList.remove('active');
-        
-        // Hide heatmap
-        if (solarMapState.heatmapInstance) {
-            solarMapState.heatmapInstance.setMap(null);
-        }
-        
-        // Show markers
-        const regionData = getSolarDataByRegion(solarMapState.currentRegion);
-        if (regionData) {
-            regionData.data.forEach(function(point) {
-                const marker = new google.maps.Marker({
-                    position: { lat: point.lat, lng: point.lng },
-                    map: solarMapState.mapInstance,
-                    title: `${point.value} hrs/day`,
-                    icon: {
-                        path: google.maps.SymbolPath.CIRCLE,
-                        scale: 8,
-                        fillColor: getSolarColorForValue(point.value),
-                        fillOpacity: 0.8,
-                        strokeColor: '#fff',
-                        strokeWeight: 2
-                    }
-                });
-                solarMapState.markers.push(marker);
-                
-                marker.addListener('click', function() {
-                    showLocationInfo(point.lat, point.lng, `Location (${point.value} hrs/day)`, point.value);
-                });
-            });
-        }
+        if (markersBtn) markersBtn.classList.add('active');
     }
-    
-    saveMapPreferences();
+}
+
+/**
+ * Handle map click events
+ */
+function handleMapClick(latLng) {
+    // Fallback mode - no map click handling needed
+    console.log('Map click detected');
 }
 
 /**
  * Compare user's location with St. Louis average
  */
 function compareLocations() {
-    if (!solarMapState.selectedLocation) {
-        showToast('Please click on a location on the map first');
-        return;
-    }
-    
-    const stLouisHours = 4.5;
-    const selectedHours = solarMapState.selectedLocation.solarHours;
-    const difference = selectedHours - stLouisHours;
-    const percentDiff = ((difference / stLouisHours) * 100).toFixed(1);
-    
-    let comparison = '';
-    if (difference > 0) {
-        comparison = `This location gets ${Math.abs(percentDiff)}% MORE sunlight than St. Louis (${selectedHours} vs 4.5 hrs/day).`;
-    } else if (difference < 0) {
-        comparison = `This location gets ${Math.abs(percentDiff)}% LESS sunlight than St. Louis (${selectedHours} vs 4.5 hrs/day).`;
-    } else {
-        comparison = `This location matches St. Louis average (${selectedHours} hrs/day).`;
-    }
-    
-    const systemSize = calculateSystemSizeForLocation(selectedHours, 2000);
-    const monthlyGen = estimateMonthlyGeneration(systemSize, selectedHours);
-    const stLouisMonthly = estimateMonthlyGeneration(5, stLouisHours); // Assuming 5kW in St. Louis
-    
-    const message = `📊 Solar Comparison:\n\n${comparison}\n\nFor a typical 2000 sq ft home:\n- Recommended system: ${systemSize} kW\n- Monthly generation: ${monthlyGen} kWh\n- Better fit for solar? ${selectedHours > stLouisHours ? 'Yes!' : 'Still good!'}`;
-    
-    addMessage(message, false);
+    showToast('Solar comparison feature coming soon');
 }
 
 /**
