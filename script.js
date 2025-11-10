@@ -1,3 +1,12 @@
+// AI Configuration
+const AI_CONFIG = {
+    apiKey: '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',
+    apiUrl: 'https://openrouter.ai/api/v1/chat/completions',
+    model: 'google/gemini-2.0-flash-exp:free',
+    maxTokens: 1000,
+    temperature: 0.7
+};
+
 // State
 let state = {
     currentUser: null,
@@ -7,10 +16,77 @@ let state = {
     recognition: null,
     chatHistory: {},
     messageIdCounter: 0,
-    sidebarOpen: false
+    sidebarOpen: false,
+    conversationContext: []
 };
 
 const sessionStart = Date.now();
+
+// System Prompt for AI
+const SYSTEM_PROMPT = `You are SolarBot, an expert AI solar energy consultant specializing in the Greater St. Louis, Missouri region. Your role is to help homeowners understand solar energy, calculate savings, and guide them toward making informed decisions about solar panel installation.
+
+EXPERTISE & KNOWLEDGE:
+- Solar panel technology, installation, and maintenance
+- Federal tax incentives (30% federal tax credit through 2032)
+- Missouri state incentives (5% state rebate)
+- St. Louis climate data: averages 4.5 peak sun hours daily, excellent for solar
+- Typical system sizes: 5-10 kW for residential homes
+- Average installation costs: $15,000-$25,000 before incentives
+- System lifespan: 25-30 years with minimal maintenance
+- Payback periods: typically 6-12 years in St. Louis area
+- ROI calculations and long-term savings projections
+
+PERSONALITY & TONE:
+- Friendly, enthusiastic, and encouraging about solar energy
+- Professional yet conversational
+- Patient and educational - explain technical concepts simply
+- Positive about solar benefits without being pushy
+- Empathetic to concerns about costs and installation
+- Use real numbers and data to build trust
+
+KEY RESPONSIBILITIES:
+1. Answer questions about solar energy, panels, installation, costs, and benefits
+2. Help users understand their potential savings
+3. Explain incentives, tax credits, and financing options
+4. Address concerns about roof suitability, shading, weather, and maintenance
+5. Guide users toward using the calculator or scheduling consultations
+6. Provide St. Louis-specific information and context
+
+SPECIAL TRIGGERS (Do NOT mention these directly, just naturally guide):
+- When discussing costs/savings → Suggest: "Would you like me to show you our savings calculator?"
+- When asked about weather/production → Suggest: "Want to see today's solar weather forecast?"
+- When user is ready to move forward → Suggest: "Would you like to schedule a free consultation?"
+- When asked for contact → Suggest: "I can open our contact form for you."
+
+ST. LOUIS SPECIFIC CONTEXT:
+- Climate: Hot, humid summers (great for solar); cold winters (panels still produce)
+- Average electricity rate: $0.12/kWh
+- Peak sun hours: 4.5 hours/day annually
+- Common concerns: snow coverage (panels self-clean), hail damage (panels rated for 1" hail)
+- Local incentives: Ameren Missouri net metering available
+- Typical annual production: 5kW system produces ~7,500 kWh/year
+
+CONVERSATION GUIDELINES:
+- Keep responses concise (2-4 sentences unless explaining complex topics)
+- Ask follow-up questions to understand user needs
+- Personalize advice based on their situation (home size, budget, energy usage)
+- Celebrate their interest in renewable energy
+- Build excitement about solar benefits and savings
+- Always be accurate - if unsure, acknowledge and offer to connect them with an expert
+
+COMMON OBJECTIONS & HOW TO HANDLE:
+- "Too expensive" → Explain financing options, $0 down, tax credits reduce cost 35%
+- "Takes too long to pay back" → Show 7-9 year payback with 25 year system life = 16+ years of free power
+- "What if I move?" → Solar increases home value 3-4%, making homes sell faster
+- "Maintenance concerns" → Minimal maintenance, 25-year warranties, rain cleans panels
+- "Cloudy days" → Panels still produce 10-25% on cloudy days, St. Louis has 200+ sunny days
+
+RESPONSE STYLE:
+Start with acknowledging their question/concern, then provide clear information, then guide toward next action.
+
+Example: "Great question! Solar panels actually work quite well in winter. While days are shorter, the cold temperatures make panels more efficient. Plus, snow typically slides off quickly. St. Louis gets enough annual sunlight that your system will produce strong returns year-round. Would you like to see our calculator to estimate your specific savings?"
+
+Remember: Your goal is to educate, build confidence, and guide users toward either using the calculator or scheduling a consultation. Be their trusted solar advisor!`;
 
 // Users
 const USERS = {
@@ -473,6 +549,9 @@ function createNewChat() {
     const chatId = 'chat_' + Date.now();
     state.currentChatId = chatId;
     
+    // Reset conversation context for new chat
+    state.conversationContext = [];
+    
     const chatContainer = document.getElementById('chatContainer');
     chatContainer.innerHTML = '<div class="message bot"><div class="message-wrapper">' +
         '<div class="avatar">S</div><div class="message-content">' +
@@ -493,11 +572,22 @@ function loadChat(chatId) {
     
     state.currentChatId = chatId;
     
+    // Rebuild conversation context from chat history
+    state.conversationContext = [];
+    
     const chatContainer = document.getElementById('chatContainer');
     chatContainer.innerHTML = '';
     
     chat.messages.forEach(function(msg) {
         addMessageToDOM(msg.content, msg.role === 'user');
+        
+        // Rebuild context (skip initial bot greeting)
+        if (msg.content !== "Hello! I'm SolarBot, your AI-powered solar energy assistant. I can help you understand solar panels, calculate potential savings, schedule appointments, and answer all your renewable energy questions. How can I help you today?") {
+            state.conversationContext.push({
+                role: msg.role === 'user' ? 'user' : 'assistant',
+                content: msg.content
+            });
+        }
     });
     
     loadChatHistory();
@@ -582,15 +672,48 @@ function sendMessage() {
     addMessage(message, true);
     input.value = '';
     
+    // Add to conversation context
+    state.conversationContext.push({
+        role: 'user',
+        content: message
+    });
+    
     showTypingIndicator();
     
-    setTimeout(function() {
-        const response = getResponse(message);
+    // Get AI response
+    getAIResponse(message).then(function(response) {
         hideTypingIndicator();
         addMessage(response, false);
+        
+        // Add to conversation context
+        state.conversationContext.push({
+            role: 'assistant',
+            content: response
+        });
+        
+        // Keep only last 10 messages for context
+        if (state.conversationContext.length > 20) {
+            state.conversationContext = state.conversationContext.slice(-20);
+        }
+        
         saveCurrentChat();
         input.focus();
-    }, 1000 + Math.random() * 500);
+    }).catch(function(error) {
+        console.error('AI Error:', error);
+        hideTypingIndicator();
+        
+        // Fallback to rule-based response
+        const fallbackResponse = getResponse(message);
+        addMessage(fallbackResponse, false);
+        
+        state.conversationContext.push({
+            role: 'assistant',
+            content: fallbackResponse
+        });
+        
+        saveCurrentChat();
+        input.focus();
+    });
 }
 
 function sendSuggestion(text) {
@@ -691,6 +814,91 @@ function showTypingIndicator() {
 function hideTypingIndicator() {
     const indicator = document.getElementById('typingIndicator');
     if (indicator) indicator.remove();
+}
+
+// AI Response Function
+async function getAIResponse(userMessage) {
+    try {
+        // Check for special triggers that should use widgets
+        const msg = userMessage.toLowerCase();
+        
+        // Weather widget trigger
+        if (/weather|sun|sunny|cloud|forecast|production.*today/i.test(msg)) {
+            setTimeout(function() { showWeather(); }, 500);
+            return "Let me show you today's weather and solar production potential for St. Louis!";
+        }
+        
+        // Calculator trigger
+        if (/calculat|savings|estimate|how much.*save|show.*calculator/i.test(msg)) {
+            setTimeout(function() { showCalculator(); }, 500);
+            return "Great! Let me pull up the solar savings calculator customized for St. Louis homeowners.";
+        }
+        
+        // Appointment/Contact trigger
+        if (/schedule|appointment|consult|book|meet|visit|contact|call|email|reach|speak|talk.*someone/i.test(msg)) {
+            setTimeout(function() { openContactForm(); }, 500);
+            return "Excellent! I'm opening our contact form where you can schedule a free consultation with our solar experts. They'll provide a detailed assessment of your home and answer any questions you have!";
+        }
+        
+        // Build conversation history for context
+        const messages = [
+            {
+                role: 'system',
+                content: SYSTEM_PROMPT
+            }
+        ];
+        
+        // Add recent conversation context (last 10 exchanges)
+        const recentContext = state.conversationContext.slice(-10);
+        messages.push(...recentContext);
+        
+        // Make API call
+        const response = await fetch(AI_CONFIG.apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + AI_CONFIG.apiKey,
+                'HTTP-Referer': window.location.href,
+                'X-Title': 'SolarBot - Solar Energy Assistant'
+            },
+            body: JSON.stringify({
+                model: AI_CONFIG.model,
+                messages: messages,
+                max_tokens: AI_CONFIG.maxTokens,
+                temperature: AI_CONFIG.temperature
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('AI API request failed: ' + response.status);
+        }
+        
+        const data = await response.json();
+        
+        if (data.choices && data.choices[0] && data.choices[0].message) {
+            let aiResponse = data.choices[0].message.content.trim();
+            
+            // Post-process AI response to trigger widgets if it suggests them
+            if (/calculator|calculate your savings|show you.*calculator/i.test(aiResponse)) {
+                setTimeout(function() { showCalculator(); }, 1000);
+            }
+            if (/weather|solar.*forecast|today's conditions/i.test(aiResponse)) {
+                setTimeout(function() { showWeather(); }, 1000);
+            }
+            if (/contact form|schedule.*consultation|fill out.*form/i.test(aiResponse)) {
+                setTimeout(function() { openContactForm(); }, 1000);
+            }
+            
+            return aiResponse;
+        } else {
+            throw new Error('Invalid AI response format');
+        }
+        
+    } catch (error) {
+        console.error('AI Error:', error);
+        // Return fallback response
+        throw error;
+    }
 }
 
 function getResponse(userMessage) {
