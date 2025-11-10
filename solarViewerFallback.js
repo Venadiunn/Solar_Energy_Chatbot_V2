@@ -105,17 +105,30 @@ let currentSelectedRegion = 'st-louis';
  */
 function initializeSolarViewerFallback() {
     console.log('Initializing Solar Viewer (Fallback Mode - No API)');
-    renderSolarRegionGrid();
-    selectRegion('st-louis');
+    
+    try {
+        renderSolarRegionGrid();
+        selectRegion('st-louis');
+        console.log('Solar Viewer initialized successfully');
+    } catch (error) {
+        console.error('Error initializing solar viewer:', error);
+        console.error('Error stack:', error.stack);
+        throw error;
+    }
 }
 
 /**
  * Render the grid of solar regions
  */
 function renderSolarRegionGrid() {
+    console.log('renderSolarRegionGrid called');
     const container = document.getElementById('solarMapCanvas');
-    if (!container) return;
+    if (!container) {
+        console.error('solarMapCanvas container not found!');
+        return;
+    }
     
+    console.log('Container found, rendering grid...');
     let html = '<div class="solar-grid">';
     
     for (const [key, region] of Object.entries(SOLAR_REGIONS)) {
@@ -132,6 +145,7 @@ function renderSolarRegionGrid() {
     
     html += '</div>';
     container.innerHTML = html;
+    console.log('Grid rendered with', Object.keys(SOLAR_REGIONS).length, 'regions');
     
     // Add CSS if not already there
     if (!document.getElementById('solar-viewer-styles')) {

@@ -1062,27 +1062,40 @@ function showSolarMap() {
     const modal = document.getElementById('solarMapModal');
     if (!modal) {
         console.error('Solar map modal not found');
+        showToast('Could not find solar map modal');
         return;
     }
 
     try {
+        console.log('Opening solar viewer...');
         modal.classList.add('active');
         
         // Always use fallback viewer (no Google Maps billing available)
+        console.log('typeof initializeSolarViewerFallback:', typeof initializeSolarViewerFallback);
+        
         if (typeof initializeSolarViewerFallback === 'function') {
+            console.log('Calling initializeSolarViewerFallback...');
             initializeSolarViewerFallback();
+            console.log('initializeSolarViewerFallback completed');
+        } else {
+            console.error('initializeSolarViewerFallback is not a function!');
+            showToast('Solar viewer not loaded. Refresh the page.');
+            return;
         }
         
         // Populate region dropdown
+        console.log('typeof populateSolarRegionSelect:', typeof populateSolarRegionSelect);
         if (typeof populateSolarRegionSelect === 'function') {
+            console.log('Populating solar region select...');
             populateSolarRegionSelect();
         }
         
-        console.log('Solar Viewer opened (Fallback Mode)');
+        console.log('Solar Viewer opened successfully');
     } catch (error) {
         console.error('Error opening solar viewer:', error);
+        console.error('Error stack:', error.stack);
         modal.classList.remove('active');
-        showToast('Could not open solar viewer.');
+        showToast('Could not open solar viewer: ' + error.message);
     }
 }
 
