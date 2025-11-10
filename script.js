@@ -1061,41 +1061,56 @@ function trackEvent(eventName, eventData) {
 function showSolarMap() {
     const modal = document.getElementById('solarMapModal');
     if (!modal) {
-        console.error('Solar map modal not found');
+        console.error('[SolarBot] Solar map modal not found');
         showToast('Could not find solar map modal');
         return;
     }
 
     try {
-        console.log('Opening solar viewer...');
+        console.log('[SolarBot] Opening solar heatmap...');
         modal.classList.add('active');
         
-        // Always use fallback viewer (no Google Maps billing available)
-        console.log('typeof initializeSolarViewerFallback:', typeof initializeSolarViewerFallback);
-        
-        if (typeof initializeSolarViewerFallback === 'function') {
-            console.log('Calling initializeSolarViewerFallback...');
-            initializeSolarViewerFallback();
-            console.log('initializeSolarViewerFallback completed');
+        // Use open-source Leaflet heatmap if available
+        if (window.usingSolarHeatmap && typeof initializeSolarHeatmap === 'function') {
+            console.log('[SolarBot] Initializing Leaflet solar heatmap...');
+            
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                try {
+                    initializeSolarHeatmap();
+                    console.log('[SolarBot] Heatmap initialized successfully');
+                } catch (error) {
+                    console.error('[SolarBot] Heatmap initialization error:', error);
+                    fallbackToCardViewer();
+                }
+            }, 100);
+        } else if (typeof initializeSolarViewerFallback === 'function') {
+            console.log('[SolarBot] Heatmap unavailable, using fallback card viewer');
+            fallbackToCardViewer();
         } else {
-            console.error('initializeSolarViewerFallback is not a function!');
+            console.error('[SolarBot] No solar viewer available');
             showToast('Solar viewer not loaded. Refresh the page.');
-            return;
+            modal.classList.remove('active');
         }
         
-        // Populate region dropdown
-        console.log('typeof populateSolarRegionSelect:', typeof populateSolarRegionSelect);
+    } catch (error) {
+        console.error('[SolarBot] Error opening solar map:', error);
+        console.error('[SolarBot] Error stack:', error.stack);
+        modal.classList.remove('active');
+        showToast('Could not open solar map: ' + error.message);
+    }
+}
+
+/**
+ * Fallback to card viewer if heatmap unavailable
+ */
+function fallbackToCardViewer() {
+    if (typeof initializeSolarViewerFallback === 'function') {
+        initializeSolarViewerFallback();
         if (typeof populateSolarRegionSelect === 'function') {
-            console.log('Populating solar region select...');
             populateSolarRegionSelect();
         }
-        
-        console.log('Solar Viewer opened successfully');
-    } catch (error) {
-        console.error('Error opening solar viewer:', error);
-        console.error('Error stack:', error.stack);
-        modal.classList.remove('active');
-        showToast('Could not open solar viewer: ' + error.message);
+        console.log('[SolarBot] Fallback card viewer initialized');
     }
 }
 
@@ -1300,33 +1315,76 @@ function useSolarViewerFallback() {
 function checkAndAutoSearchMap(userMessage) {
     const msg = userMessage.toLowerCase();
     
-    // List of pre-loaded regions to auto-search
+    // Keywords that suggest showing the solar heatmap
+    const heatmapKeywords = [
+        'solar potential',
+        'sunlight',
+        'peak sun',
+        'sun hours',
+        'solar irradiance',
+        'solar resources',
+        'best location',
+        'solar map',
+        'heatmap',
+        'where should i',
+        'which area',
+        'comparing solar',
+        'solar difference',
+        'regional solar',
+        'location solar',
+        'geographic solar'
+    ];
+
+    // Check for heatmap keywords
+    for (const keyword of heatmapKeywords) {
+        if (msg.includes(keyword)) {
+            console.log('[SolarBot] Auto-suggesting solar heatmap for keyword:', keyword);
+            // AI will naturally suggest the map in its response
+            return true; // Let AI handle the suggestion
+        }
+    }
+    
+    // List of pre-loaded cities to auto-search
     const cityPatterns = {
         'denver': 'denver',
         'phoenix': 'phoenix',
         'los angeles': 'los-angeles',
+        'los angeles': 'los-angeles',
+        'san diego': 'san-diego',
+        'san francisco': 'los-angeles',
+        'las vegas': 'las-vegas',
         'seattle': 'seattle',
         'miami': 'miami',
+        'florida': 'miami',
         'boston': 'boston',
+        'new york': 'new-york',
         'atlanta': 'atlanta',
+        'georgia': 'atlanta',
         'austin': 'austin',
+        'texas': 'houston',
+        'houston': 'houston',
         'chicago': 'chicago',
-        'kansas city': 'kansas-city',
-        'springfield': 'springfield-mo'
+        'illinois': 'chicago',
+        'portland': 'portland',
+        'st louis': 'st-louis',
+        'missouri': 'st-louis',
+        'california': 'los-angeles'
     };
     
     // Check if user mentioned any city
     for (const [city, regionKey] of Object.entries(cityPatterns)) {
         if (msg.includes(city)) {
-            // Auto-open map and search for this city
+            console.log('[SolarBot] Auto-opening heatmap for city:', city);
+            // Auto-open map and jump to the region
             setTimeout(function() {
                 showSolarMap();
                 setTimeout(function() {
                     // After map opens, jump to the region
-                    if (solarMapState.mapInstance) {
-                        changeMapRegion(regionKey);
+                    if (typeof selectSolarRegion === 'function') {
+                        selectSolarRegion(regionKey);
+                        console.log('[SolarBot] Jumped to region:', regionKey);
                     }
-                }, 500);
+                }, 300);
             }, 100);
             return true;
         }
@@ -1334,6 +1392,7 @@ function checkAndAutoSearchMap(userMessage) {
     
     return false;
 }
+
 
 
 

@@ -4,9 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SolarBot - Your Solar Energy Assistant</title>
-    <meta name="version" content="2.1-solar-map-fix">
+    <meta name="version" content="3.0-leaflet-heatmap">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=2.1">
+    <link rel="stylesheet" href="style.css?v=3.0">
+    <!-- Leaflet.js for open-source mapping (no Google Maps API required) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <!-- Leaflet.heat for heatmap visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.min.js"></script>
 </head>
 <body>
     <!-- Login Screen -->
@@ -224,16 +229,27 @@
         </div>
     </div>
 
-    <!-- Google Maps disabled - billing not available, using fallback viewer instead -->
+    <!-- Google Maps disabled - billing not available, using open-source Leaflet.js heatmap instead -->
     <!-- <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARclNvgJwnomgTUSTr7n6DpiltNsX246g&libraries=visualization,places&callback=onGoogleMapsLoaded"></script> -->
     
-    <script src="script.js?v=2.1"></script>
-    <script src="solarViewerFallback.js?v=2.1"></script>
+    <script src="script.js?v=3.0"></script>
+    <script src="solarHeatmap.js?v=3.0"></script>
+    <script src="solarViewerFallback.js?v=3.0"></script>
     
-    <!-- Auto-activate fallback viewer on page load -->
+    <!-- Auto-activate open-source solar heatmap on page load -->
     <script>
-        window.usingSolarFallback = true;
-        console.log('Using Solar Viewer Fallback (no Google Maps)');
+        window.usingSolarHeatmap = true;
+        window.usingSolarFallback = false;
+        console.log('Using Solar Heatmap with Leaflet.js (no Google Maps API)');
+        // Fallback will auto-trigger if heatmap fails to load
+        window.addEventListener('load', function() {
+            if (typeof initializeSolarHeatmap !== 'function') {
+                console.warn('Leaflet heatmap not available, falling back to card viewer');
+                window.usingSolarFallback = true;
+            }
+        });
     </script>
+</body>
+</html>
 </body>
 </html>
