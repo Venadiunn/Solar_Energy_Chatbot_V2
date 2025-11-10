@@ -822,7 +822,7 @@ async function getAIResponse(userMessage) {
         const recentContext = state.conversationContext.slice(-10);
         messages.push(...recentContext);
         
-        // Make API call
+        console.log('Messages being sent:', JSON.stringify(messages, null, 2));
         console.log('Making AI request with model:', AI_CONFIG.model);
         
         const response = await fetch(AI_CONFIG.apiUrl, {
@@ -843,20 +843,19 @@ async function getAIResponse(userMessage) {
         
         console.log('AI Response status:', response.status);
         
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('AI API Error:', response.status, errorText);
-            throw new Error('AI API request failed: ' + response.status + ' - ' + errorText);
-        }
-        
         const data = await response.json();
+        console.log('Raw API response:', data);
+        
+        if (!response.ok) {
+            console.error('AI API Error Response:', data);
+            throw new Error('AI API Error: ' + (data.error?.message || response.status));
+        }
         
         if (data.choices && data.choices[0] && data.choices[0].message) {
             let aiResponse = data.choices[0].message.content.trim();
-            console.log('AI Response:', aiResponse);
+            console.log('AI Response text:', aiResponse);
             
             // Smart widget triggering based on AI response content
-            // Let the AI naturally suggest tools if needed
             const lowerResponse = aiResponse.toLowerCase();
             
             if (lowerResponse.includes('calculator')) {
@@ -871,12 +870,14 @@ async function getAIResponse(userMessage) {
             
             return aiResponse;
         } else {
+            console.error('Unexpected response format:', data);
             throw new Error('Invalid AI response format');
         }
         
     } catch (error) {
-        console.error('AI Error:', error);
-        // Return fallback response
+        console.error('AI Error caught:', error);
+        // Log to show we're falling back
+        console.warn('Falling back to rule-based response');
         throw error;
     }
 }
