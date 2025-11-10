@@ -818,6 +818,8 @@ function hideTypingIndicator() {
 
 // AI Response Function
 async function getAIResponse(userMessage) {
+    console.log('getAIResponse called with:', userMessage);
+    
     try {
         // Check for special triggers that should use widgets
         const msg = userMessage.toLowerCase();
@@ -853,6 +855,8 @@ async function getAIResponse(userMessage) {
         messages.push(...recentContext);
         
         // Make API call
+        console.log('Making AI request with model:', AI_CONFIG.model);
+        
         const response = await fetch(AI_CONFIG.apiUrl, {
             method: 'POST',
             headers: {
@@ -869,8 +873,12 @@ async function getAIResponse(userMessage) {
             })
         });
         
+        console.log('AI Response status:', response.status);
+        
         if (!response.ok) {
-            throw new Error('AI API request failed: ' + response.status);
+            const errorText = await response.text();
+            console.error('AI API Error:', response.status, errorText);
+            throw new Error('AI API request failed: ' + response.status + ' - ' + errorText);
         }
         
         const data = await response.json();
