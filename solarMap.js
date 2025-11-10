@@ -330,6 +330,13 @@ function initializeSolarMap(containerId) {
     }
     
     try {
+        // Check if Google Maps API is loaded
+        if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+            console.error('Google Maps API not loaded yet. Retrying...');
+            setTimeout(() => initializeSolarMap(containerId), 500);
+            return null;
+        }
+        
         // Load preferences
         loadMapPreferences();
         
