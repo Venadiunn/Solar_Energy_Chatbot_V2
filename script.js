@@ -1066,41 +1066,49 @@ function showSolarMap() {
     }
 
     try {
-        // Check if Google Maps is available
-        if (!window.google || !window.google.maps) {
-            console.warn('Google Maps API not available');
-            showToast('Google Maps is loading. Please try again in a moment.');
-            setTimeout(() => showSolarMap(), 2000);
-            return;
-        }
-        
         modal.classList.add('active');
         
-        // Initialize map if not already done
-        if (!solarMapState.isInitialized) {
+        // Check if Google Maps is available
+        if (!window.googleMapsReady || !window.google || !window.google.maps) {
+            console.warn('Google Maps API not available - using fallback viewer');
+            useSolarViewerFallback();
+        } else if (!solarMapState.isInitialized) {
+            // Try Google Maps version
             const mapResult = initializeSolarMap('solarMapCanvas');
             if (!mapResult) {
-                console.warn('Failed to initialize map');
-                showToast('Map could not be initialized. Showing data view instead.');
-                return;
+                console.warn('Failed to initialize Google Maps - falling back');
+                useSolarViewerFallback();
             }
         } else if (solarMapState.mapInstance) {
             // Trigger map resize if it was already initialized
             try {
                 google.maps.event.trigger(solarMapState.mapInstance, 'resize');
             } catch (e) {
-                console.error('Error triggering map resize:', e);
+                console.error('Error with Google Maps:', e);
             }
         }
         
         // Populate region dropdown
-        populateRegionDropdown();
+        if (window.usingSolarFallback && typeof populateSolarRegionSelect === 'function') {
+            populateSolarRegionSelect();
+        } else {
+            populateRegionDropdown();
+        }
         
         console.log('Solar map opened');
     } catch (error) {
         console.error('Error opening solar map:', error);
-        modal.classList.remove('active');
-        showToast('Could not open solar map. Showing data view instead.');
+        console.log('Attempting fallback...');
+        
+        // Force fallback on any error
+        try {
+            useSolarViewerFallback();
+            populateSolarRegionSelect();
+        } catch (fallbackError) {
+            console.error('Fallback also failed:', fallbackError);
+            modal.classList.remove('active');
+            showToast('Could not load solar viewer.');
+        }
     }
 }
 
@@ -1137,6 +1145,12 @@ function populateRegionDropdown() {
  */
 function changeMapRegion(regionKey) {
     if (!regionKey) return;
+    
+    // If using fallback, use fallback function
+    if (window.usingSolarFallback && typeof changeSolarRegion === 'function') {
+        changeSolarRegion(regionKey);
+        return;
+    }
     
     const regionData = getSolarDataByRegion(regionKey);
     if (!regionData || !solarMapState.mapInstance) return;
@@ -1365,6 +1379,7 @@ function triggerSolarMapAutoResponse(locationName, solarHours) {
  */
 function onGoogleMapsLoaded() {
     console.log('Google Maps API loaded successfully');
+    window.googleMapsReady = true;
     
     // Try to initialize map if modal is open
     const modal = document.getElementById('solarMapModal');
@@ -1374,6 +1389,28 @@ function onGoogleMapsLoaded() {
                 initializeSolarMap('solarMapCanvas');
             }
         }, 100);
+    }
+}
+
+/**
+ * Fallback if Google Maps API fails to load or has billing issues
+ * Called automatically or on error
+ */
+function useSolarViewerFallback() {
+    console.log('Using Solar Viewer Fallback (No Google Maps)');
+    
+    // Mark that we're using fallback
+    window.usingSolarFallback = true;
+    solarMapState.isInitialized = true;
+    
+    // Load fallback functions
+    if (typeof initializeSolarViewerFallback === 'function') {
+        initializeSolarViewerFallback();
+    }
+    
+    // Update dropdown
+    if (typeof populateSolarRegionSelect === 'function') {
+        populateSolarRegionSelect();
     }
 }
 

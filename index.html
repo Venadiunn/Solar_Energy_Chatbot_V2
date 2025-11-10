@@ -227,5 +227,17 @@
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARclNvgJwnomgTUSTr7n6DpiltNsX246g&libraries=visualization,places&callback=onGoogleMapsLoaded"></script>
     <script src="script.js?v=2.1"></script>
     <script src="solarMap.js?v=2.1"></script>
+    <script src="solarViewerFallback.js?v=2.1"></script>
+    
+    <!-- Fallback if Google Maps API fails -->
+    <script>
+        // Set a timeout to activate fallback if Google Maps doesn't load
+        setTimeout(function() {
+            if (!window.googleMapsReady && typeof useSolarViewerFallback === 'function') {
+                console.log('Google Maps failed to load - activating fallback');
+                window.usingSolarFallback = true;
+            }
+        }, 3000);
+    </script>
 </body>
 </html>
