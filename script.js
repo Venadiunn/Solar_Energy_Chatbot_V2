@@ -1,8 +1,8 @@
 // AI Configuration
 const AI_CONFIG = {
-    apiKey: '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',
-    apiUrl: 'https://openrouter.ai/api/v1/chat/completions',
-    model: 'google/gemini-2.0-flash-exp:free',
+    apiKey: 'AIzaSyARclNvgJwnomgTUSTr7n6DpiltNsX246g',
+    apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+    model: 'gemini-2.0-flash',
     maxTokens: 1000,
     temperature: 0.8  // Slightly higher for more natural, varied responses
 };
@@ -810,49 +810,68 @@ async function getAIResponse(userMessage) {
     console.log('getAIResponse called with:', userMessage);
     
     try {
-        // Build conversation history for context
-        const messages = [
-            {
-                role: 'system',
-                content: SYSTEM_PROMPT
-            }
-        ];
+        // Build the system + user message for Gemini
+        const systemPromptText = SYSTEM_PROMPT;
         
-        // Add recent conversation context (last 10 exchanges)
+        // Get recent context
         const recentContext = state.conversationContext.slice(-10);
-        messages.push(...recentContext);
         
-        console.log('Messages being sent:', JSON.stringify(messages, null, 2));
-        console.log('Making AI request with model:', AI_CONFIG.model);
+        // Build conversation history for Gemini format
+        let conversationHistory = '';
+        recentContext.forEach(function(msg) {
+            if (msg.role === 'user') {
+                conversationHistory += 'User: ' + msg.content + '\n\n';
+            } else if (msg.role === 'assistant') {
+                conversationHistory += 'Assistant: ' + msg.content + '\n\n';
+            }
+        });
         
-        const response = await fetch(AI_CONFIG.apiUrl, {
+        // Combine system prompt with conversation history and current message
+        const fullPrompt = systemPromptText + '\n\n' + conversationHistory + 'User: ' + userMessage + '\n\nAssistant:';
+        
+        console.log('Making Gemini API request...');
+        console.log('Full prompt:', fullPrompt.substring(0, 200) + '...');
+        
+        const response = await fetch(AI_CONFIG.apiUrl + '?key=' + AI_CONFIG.apiKey, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + AI_CONFIG.apiKey,
-                'HTTP-Referer': window.location.href,
-                'X-Title': 'SolarBot - Solar Energy Assistant'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: AI_CONFIG.model,
-                messages: messages,
-                max_tokens: AI_CONFIG.maxTokens,
-                temperature: AI_CONFIG.temperature
+                contents: [
+                    {
+                        parts: [
+                            {
+                                text: fullPrompt
+                            }
+                        ]
+                    }
+                ],
+                generationConfig: {
+                    maxOutputTokens: AI_CONFIG.maxTokens,
+                    temperature: AI_CONFIG.temperature
+                }
             })
         });
         
-        console.log('AI Response status:', response.status);
+        console.log('Gemini Response status:', response.status);
         
         const data = await response.json();
-        console.log('Raw API response:', data);
+        console.log('Gemini Response data:', data);
         
         if (!response.ok) {
-            console.error('AI API Error Response:', data);
-            throw new Error('AI API Error: ' + (data.error?.message || response.status));
+            console.error('Gemini API Error Response:', data);
+            throw new Error('Gemini API Error: ' + (data.error?.message || response.status));
         }
         
-        if (data.choices && data.choices[0] && data.choices[0].message) {
-            let aiResponse = data.choices[0].message.content.trim();
+        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+            let aiResponse = data.candidates[0].content.parts[0].text.trim();
+            
+            // Clean up the response if it starts with "Assistant:"
+            if (aiResponse.startsWith('Assistant:')) {
+                aiResponse = aiResponse.substring('Assistant:'.length).trim();
+            }
+            
             console.log('AI Response text:', aiResponse);
             
             // Smart widget triggering based on AI response content
@@ -870,13 +889,12 @@ async function getAIResponse(userMessage) {
             
             return aiResponse;
         } else {
-            console.error('Unexpected response format:', data);
-            throw new Error('Invalid AI response format');
+            console.error('Unexpected Gemini response format:', data);
+            throw new Error('Invalid Gemini response format');
         }
         
     } catch (error) {
         console.error('AI Error caught:', error);
-        // Log to show we're falling back
         console.warn('Falling back to rule-based response');
         throw error;
     }

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Test</title>
+</head>
+<body>
+    <h1>Solar Bot AI Test</h1>
+    <input type="text" id="testInput" placeholder="Enter message" />
+    <button onclick="testAI()">Test AI</button>
+    <div id="output" style="margin-top: 20px; border: 1px solid #ccc; padding: 10px;"></div>
+
+    <script>
+        const AI_CONFIG = {
+            apiKey: 'AIzaSyARclNvgJwnomgTUSTr7n6DpiltNsX246g',
+            apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+            model: 'gemini-2.0-flash',
+            maxTokens: 1000,
+            temperature: 0.8
+        };
+
+        const SYSTEM_PROMPT = `You are SolarBot, a friendly and knowledgeable solar energy expert helping people in St. Louis understand solar panels. Keep responses concise and conversational.`;
+
+        async function testAI() {
+            const userInput = document.getElementById('testInput').value;
+            const output = document.getElementById('output');
+            
+            if (!userInput) {
+                output.innerHTML += '<p style="color: red;">Please enter a message</p>';
+                return;
+            }
+
+            output.innerHTML += `<p><strong>User:</strong> ${userInput}</p>`;
+            output.innerHTML += `<p><strong>Testing Gemini API...</strong></p>`;
+
+            try {
+                console.log('Starting Gemini AI test with message:', userInput);
+                
+                const fullPrompt = SYSTEM_PROMPT + '\n\nUser: ' + userInput + '\n\nAssistant:';
+
+                console.log('Sending request to:', AI_CONFIG.apiUrl);
+                console.log('Prompt:', fullPrompt);
+
+                const response = await fetch(AI_CONFIG.apiUrl + '?key=' + AI_CONFIG.apiKey, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [
+                            {
+                                parts: [
+                                    {
+                                        text: fullPrompt
+                                    }
+                                ]
+                            }
+                        ],
+                        generationConfig: {
+                            maxOutputTokens: AI_CONFIG.maxTokens,
+                            temperature: AI_CONFIG.temperature
+                        }
+                    })
+                });
+
+                console.log('Response status:', response.status);
+
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (!response.ok) {
+                    output.innerHTML += `<p style="color: red;"><strong>Error:</strong> ${response.status} - ${JSON.stringify(data)}</p>`;
+                    return;
+                }
+
+                if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+                    let aiResponse = data.candidates[0].content.parts[0].text.trim();
+                    if (aiResponse.startsWith('Assistant:')) {
+                        aiResponse = aiResponse.substring('Assistant:'.length).trim();
+                    }
+                    output.innerHTML += `<p><strong>AI:</strong> ${aiResponse}</p>`;
+                } else {
+                    output.innerHTML += `<p style="color: red;"><strong>Unexpected format:</strong> ${JSON.stringify(data)}</p>`;
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                output.innerHTML += `<p style="color: red;"><strong>Error:</strong> ${error.message}</p>`;
+            }
+        }
+
+        // Allow Enter key to test
+        document.getElementById('testInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') testAI();
+        });
+    </script>
+</body>
+</html>
