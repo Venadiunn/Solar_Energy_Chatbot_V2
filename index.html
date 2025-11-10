@@ -74,6 +74,9 @@
 
             <!-- Dropdown Menu -->
             <div class="menu-dropdown" id="menuDropdown">
+                <button class="dropdown-item" onclick="showSolarMap(); closeMenuDropdown()">
+                    Solar Map
+                </button>
                 <button class="dropdown-item" onclick="showWeather(); closeMenuDropdown()">
                     Solar Weather
                 </button>
@@ -122,7 +125,7 @@
             <div class="suggestions" id="suggestionsContainer">
                 <button class="suggestion-btn" onclick="sendSuggestion('Why should I get solar panels?')">Why solar?</button>
                 <button class="suggestion-btn" onclick="sendSuggestion('How much do solar panels cost?')">Costs</button>
-                <button class="suggestion-btn" onclick="sendSuggestion('Schedule a consultation')">Book appointment</button>
+                <button class="suggestion-btn" onclick="showSolarMap()">📍 View Map</button>
                 <button class="suggestion-btn" onclick="showCalculator()">Calculate savings</button>
             </div>
 

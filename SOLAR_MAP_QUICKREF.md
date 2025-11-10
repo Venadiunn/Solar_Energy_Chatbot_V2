@@ -7,6 +7,7 @@ An **Interactive Solar Map** widget for the Solar Energy Chatbot that visualizes
 ## 🎯 Key Deliverables
 
 ### 1. **New Files Created**
+
 - **`solarMap.js`** (380+ lines)
   - Core module with solar data, calculations, and map functions
   - Pre-loaded data for 11 US regions
@@ -15,12 +16,15 @@ An **Interactive Solar Map** widget for the Solar Energy Chatbot that visualizes
   - LocalStorage persistence
 
 ### 2. **Files Modified**
+
 - **`index.html`** (+70 lines)
+
   - Added solar map modal HTML structure
   - Added Google Maps API script with visualization library
   - New search, region dropdown, layer controls
 
 - **`script.js`** (+150 lines)
+
   - `showSolarMap()` - Open map modal
   - `closeSolarMap()` - Close modal & save state
   - `searchMapLocation()` - Location search
@@ -33,6 +37,7 @@ An **Interactive Solar Map** widget for the Solar Energy Chatbot that visualizes
   - Enhanced suggestion buttons
 
 - **`style.css`** (+400 lines)
+
   - Complete modal styling
   - Light & dark theme support
   - Responsive design (desktop, tablet, mobile)
@@ -49,12 +54,14 @@ An **Interactive Solar Map** widget for the Solar Energy Chatbot that visualizes
 ## 📊 Data Included
 
 ### 11 Pre-loaded US Regions
+
 - St. Louis, MO (4.5 hrs/day) ⭐ Default
 - Denver, CO (5.4 hrs/day) ☀️ Highest
 - Phoenix, AZ (6.3 hrs/day) ☀️ Very High
 - Plus 8 more major US cities
 
 ### Solar Color Scale
+
 ```
 🔴 Dark Red (5.5+)    → Very High
 🟠 Orange (4.5-5.4)   → High
@@ -66,6 +73,7 @@ An **Interactive Solar Map** widget for the Solar Energy Chatbot that visualizes
 ## ✨ Features Implemented
 
 ### User Features
+
 - ✅ Interactive heatmap visualization
 - ✅ Location search & geocoding
 - ✅ Click on map to see details
@@ -78,6 +86,7 @@ An **Interactive Solar Map** widget for the Solar Energy Chatbot that visualizes
 - ✅ localStorage persistence
 
 ### Integration Features
+
 - ✅ "View Solar Map" suggestion button
 - ✅ AI naturally suggests map
 - ✅ Auto-response on location click
@@ -86,6 +95,7 @@ An **Interactive Solar Map** widget for the Solar Energy Chatbot that visualizes
 - ✅ Fallback rule-based triggers
 
 ### Technical Features
+
 - ✅ Lazy-loaded Google Maps API
 - ✅ Heatmap layer management
 - ✅ Geocoding integration
@@ -96,6 +106,7 @@ An **Interactive Solar Map** widget for the Solar Energy Chatbot that visualizes
 ## 🚀 How It Works
 
 ### User Flow
+
 1. User mentions "map", "sunlight", "location" → AI suggests or opens map
 2. User clicks "📍 View Solar Map" button
 3. Modal opens with interactive map centered on St. Louis
@@ -109,6 +120,7 @@ An **Interactive Solar Map** widget for the Solar Energy Chatbot that visualizes
 6. Map state saved in localStorage
 
 ### Technical Flow
+
 ```
 showSolarMap()
   ├─ Load map preferences from localStorage
@@ -133,36 +145,42 @@ saveMapPreferences()
 ### `solarMap.js` Functions
 
 **Configuration**
+
 - `SOLAR_MAP_CONFIG` - API settings
 - `SOLAR_COLOR_SCALE` - Color mappings
 - `US_SOLAR_DATA` - Regional data
 - `solarMapState` - State management
 
 **Core Functions**
+
 - `initializeSolarMap()` - Setup map
 - `addHeatmapLayer()` - Render heatmap
 - `handleMapClick()` - Process clicks
 - `showLocationInfo()` - Display popups
 
 **Calculations**
+
 - `calculateSystemSizeForLocation(hours, sqFt)` → kW
 - `estimateMonthlyGeneration(kW, hours)` → kWh
 - `getSolarColorForValue(irradiance)` → hex color
 - `getSolarCategoryLabel(hours)` → category string
 
 **Data Lookup**
+
 - `getSolarDataByRegion(key)` → data object
 - `searchSolarLocation(query)` → data or null
 - `findNearestSolarRegion(lat, lng)` → nearest region
 - `getAllSolarRegions()` → array of regions
 
 **Persistence**
+
 - `loadMapPreferences()` - Restore from localStorage
 - `saveMapPreferences()` - Store to localStorage
 
 ### `script.js` Integration
 
 **UI Functions**
+
 - `showSolarMap()` - Open modal
 - `closeSolarMap()` - Close & save
 - `searchMapLocation()` - Search handler
@@ -173,6 +191,7 @@ saveMapPreferences()
 - `populateRegionDropdown()` - Load regions
 
 **Chat Integration**
+
 - Updated `updateSuggestions()` - Add map button
 - Updated fallback triggers in `getResponse()`
 - Updated AI trigger in `getAIResponse()`
@@ -182,6 +201,7 @@ saveMapPreferences()
 
 ```css
 .solar-map-modal           /* Backdrop & overlay */
+/* Backdrop & overlay */
 .solar-map-container       /* Main modal box */
 .solar-map-header          /* Title & close */
 .solar-map-controls        /* Search & dropdown */
@@ -191,33 +211,36 @@ saveMapPreferences()
 .map-legend                /* Color scale */
 .map-info-panel            /* Location details */
 .map-comparison            /* Comparison tool */
-@media (max-width: 768px)  /* Mobile responsive */
+@media (max-width: 768px); /* Mobile responsive */
 ```
 
 ## 🔧 API Requirements
 
 ### Google Maps APIs Used
+
 - **Maps JavaScript API** - Map rendering
 - **Visualization Library** - Heatmap layer
 - **Geocoding API** - Address lookup
 - **Places Library** - Location search (optional)
 
 ### API Key
+
 - Uses existing key: `AIzaSyARclNvgJwnomgTUSTr7n6DpiltNsX246g`
 - Loaded in index.html script tag
 - No additional setup needed
 
 ## 📱 Responsive Breakpoints
 
-| Device | Width | Layout |
-|--------|-------|--------|
-| Desktop | >1024px | Map + Full Sidebar |
-| Tablet | 768-1024px | Responsive Stack |
-| Mobile | <768px | Map + Stacked Sidebar |
+| Device  | Width      | Layout                |
+| ------- | ---------- | --------------------- |
+| Desktop | >1024px    | Map + Full Sidebar    |
+| Tablet  | 768-1024px | Responsive Stack      |
+| Mobile  | <768px     | Map + Stacked Sidebar |
 
 ## 🧪 Testing Tips
 
 ### Manual Testing
+
 1. Open https://klppp-4de82.web.app
 2. Login with demo/demo123
 3. Try these interactions:
@@ -229,15 +252,17 @@ saveMapPreferences()
    - Refresh browser → Map remembers location
 
 ### Browser DevTools
+
 ```javascript
 // In console:
-getSolarDataByRegion('denver')
-calculateSystemSizeForLocation(5.4, 2500)
-estimateMonthlyGeneration(5, 4.5)
-solarMapState.selectedLocation
+getSolarDataByRegion("denver");
+calculateSystemSizeForLocation(5.4, 2500);
+estimateMonthlyGeneration(5, 4.5);
+solarMapState.selectedLocation;
 ```
 
 ### Known Limitations
+
 - Requires internet for Google Maps (offline mode limited)
 - Mobile: Sidebar stacked below map (space constraints)
 - Search limited to pre-loaded + geocoded results
@@ -253,12 +278,14 @@ solarMapState.selectedLocation
 ## 🎨 Customization Examples
 
 ### Change Default Location
+
 ```javascript
 // In solarMap.js line 3
 SOLAR_MAP_CONFIG.defaultCenter = { lat: 39.7392, lng: -104.9903 }; // Denver
 ```
 
 ### Add New Region
+
 ```javascript
 // In solarMap.js US_SOLAR_DATA
 'my-city': {
@@ -270,20 +297,21 @@ SOLAR_MAP_CONFIG.defaultCenter = { lat: 39.7392, lng: -104.9903 }; // Denver
 ```
 
 ### Adjust Heatmap
+
 ```javascript
-SOLAR_MAP_CONFIG.heatmapRadius = 60;     // Larger
-SOLAR_MAP_CONFIG.heatmapOpacity = 0.9;   // More visible
+SOLAR_MAP_CONFIG.heatmapRadius = 60; // Larger
+SOLAR_MAP_CONFIG.heatmapOpacity = 0.9; // More visible
 ```
 
 ## 🐛 Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Map not loading | Check Google API key, clear cache |
-| Heatmap not showing | Verify Google Maps API includes visualization library |
-| Mobile sidebar overlapping | Zoom out, or use landscape mode |
-| localStorage errors | Check browser privacy settings |
-| Search not working | Try full address, check internet connection |
+| Issue                      | Solution                                              |
+| -------------------------- | ----------------------------------------------------- |
+| Map not loading            | Check Google API key, clear cache                     |
+| Heatmap not showing        | Verify Google Maps API includes visualization library |
+| Mobile sidebar overlapping | Zoom out, or use landscape mode                       |
+| localStorage errors        | Check browser privacy settings                        |
+| Search not working         | Try full address, check internet connection           |
 
 ## 📊 Implementation Stats
 
@@ -307,6 +335,7 @@ SOLAR_MAP_CONFIG.heatmapOpacity = 0.9;   // More visible
 ## 📝 Next Steps
 
 ### To Deploy
+
 ```bash
 git add -A
 git commit -m "Solar map is live"
@@ -315,6 +344,7 @@ firebase deploy --project klppp-4de82
 ```
 
 ### To Extend
+
 1. Add more regions to `US_SOLAR_DATA`
 2. Integrate real NREL API for live data
 3. Add satellite imagery overlay
@@ -324,10 +354,12 @@ firebase deploy --project klppp-4de82
 ## 🚀 Deployment Completed
 
 ✅ **Commits**:
+
 - `5a67c8e` - Add Solar Map feature implementation
 - `28c5245` - Add comprehensive documentation
 
 ✅ **Deployed To**:
+
 - GitHub: https://github.com/Venadiunn/Solar_Energy_Chatbot_V2
 - Firebase: https://klppp-4de82.web.app (71 files)
 

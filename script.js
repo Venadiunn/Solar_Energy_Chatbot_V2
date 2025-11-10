@@ -672,6 +672,9 @@ function sendMessage() {
     addMessage(message, true);
     input.value = '';
     
+    // Check if user mentioned any city and auto-search map
+    checkAndAutoSearchMap(message);
+    
     // Add to conversation context
     state.conversationContext.push({
         role: 'user',
@@ -927,9 +930,9 @@ function getResponse(userMessage) {
         return "Great! Let me pull up the solar savings calculator for you.";
     }
 
-    if (/map|solar.*area|sunlight.*location|potential.*region|hours.*location|peak sun.*where/i.test(msg)) {
+    if (/map|solar.*area|sunlight.*location|potential.*region|hours.*location|peak sun.*where|where.*best|region|area.*solar|view.*location|show.*map|explore.*solar|check.*solar.*area|solar.*map|which.*area|compare.*location|solar.*different|region.*solar|geographic|area.*sun/i.test(msg)) {
         setTimeout(function() { showSolarMap(); }, 500);
-        return "Perfect! Let me show you our Interactive Solar Map so you can see solar potential by location.";
+        return "Perfect! Let me show you our Interactive Solar Map so you can explore solar potential across different regions. You can search any location, compare areas, and see exactly how many peak sun hours you'd get!";
     }
     
     if (/schedule|appointment|consult|book|meet|visit/i.test(msg)) {
@@ -1355,5 +1358,48 @@ function onGoogleMapsLoaded() {
         }, 100);
     }
 }
+
+/**
+ * Check user message for city mentions and auto-search map
+ * Called when user mentions specific cities in conversation
+ */
+function checkAndAutoSearchMap(userMessage) {
+    const msg = userMessage.toLowerCase();
+    
+    // List of pre-loaded regions to auto-search
+    const cityPatterns = {
+        'denver': 'denver',
+        'phoenix': 'phoenix',
+        'los angeles': 'los-angeles',
+        'seattle': 'seattle',
+        'miami': 'miami',
+        'boston': 'boston',
+        'atlanta': 'atlanta',
+        'austin': 'austin',
+        'chicago': 'chicago',
+        'kansas city': 'kansas-city',
+        'springfield': 'springfield-mo'
+    };
+    
+    // Check if user mentioned any city
+    for (const [city, regionKey] of Object.entries(cityPatterns)) {
+        if (msg.includes(city)) {
+            // Auto-open map and search for this city
+            setTimeout(function() {
+                showSolarMap();
+                setTimeout(function() {
+                    // After map opens, jump to the region
+                    if (solarMapState.mapInstance) {
+                        changeMapRegion(regionKey);
+                    }
+                }, 500);
+            }, 100);
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 
 

@@ -7,18 +7,21 @@ The **Interactive Solar Map** is a Google Maps-based visualization tool that dis
 ## ✨ Key Features
 
 ### 1. **Heatmap Visualization**
+
 - Displays solar irradiance as a color-coded heatmap
 - Color scale ranges from light blue (low solar potential) to dark red (very high)
 - Interactive heatmap layers that respond to map interactions
 - Smooth opacity and radius adjustments for optimal visibility
 
 ### 2. **Location Search & Geocoding**
+
 - Search for any city or address in the United States
 - Auto-complete suggestions from pre-loaded regional data
 - Full geocoding support via Google Maps API
 - Real-time location information display
 
 ### 3. **Solar Data Display**
+
 - Peak sun hours per day for each location
 - Solar category classification (Very High, High, Moderate, Fair, Low)
 - Recommended system size calculations (based on 2,000 sq ft home)
@@ -26,6 +29,7 @@ The **Interactive Solar Map** is a Google Maps-based visualization tool that dis
 - Color-coded system recommendations
 
 ### 4. **Interactive Controls**
+
 - **Layer Toggle**: Switch between heatmap and marker visualizations
 - **Region Dropdown**: Jump to pre-configured US regions
 - **Legend Panel**: Color scale reference with labels
@@ -33,18 +37,21 @@ The **Interactive Solar Map** is a Google Maps-based visualization tool that dis
 - **Info Panel**: Detailed data for clicked locations
 
 ### 5. **Responsive Design**
+
 - Adapts to desktop, tablet, and mobile screens
 - Touch-friendly controls for mobile users
 - Modal overlay with proper z-indexing
 - Gestural support (pan, zoom, pinch)
 
 ### 6. **Theme Support**
+
 - Light theme styling (warm solar colors)
 - Dark theme styling (modern dark UI)
 - Real-time theme switching with map style updates
 - Consistent with main chatbot UI
 
 ### 7. **Data Persistence**
+
 - Saves last viewed location and zoom level
 - Persists user preferences in localStorage
 - Remembers selected layer type (heatmap vs markers)
@@ -53,22 +60,23 @@ The **Interactive Solar Map** is a Google Maps-based visualization tool that dis
 ## 📊 Solar Data Coverage
 
 ### Pre-loaded Regional Data
+
 The map includes solar irradiance data for 11 major US regions:
 
-| Region | City | Peak Sun Hours/Day | Category |
-|--------|------|-------------------|----------|
-| St. Louis Metro | St. Louis, MO | 4.5 | High |
-| Kansas City | Kansas City, MO | 4.4 | High |
-| Springfield | Springfield, MO | 4.3 | High |
-| Chicago | Chicago, IL | 4.1 | Moderate |
-| Denver | Denver, CO | 5.4 | Very High |
-| Phoenix | Phoenix, AZ | 6.3 | Very High |
-| Los Angeles | Los Angeles, CA | 5.9 | Very High |
-| Seattle | Seattle, WA | 3.5 | Fair |
-| Miami | Miami, FL | 5.2 | Very High |
-| Boston | Boston, MA | 3.9 | Fair |
-| Atlanta | Atlanta, GA | 4.6 | High |
-| Austin | Austin, TX | 5.1 | Very High |
+| Region          | City            | Peak Sun Hours/Day | Category  |
+| --------------- | --------------- | ------------------ | --------- |
+| St. Louis Metro | St. Louis, MO   | 4.5                | High      |
+| Kansas City     | Kansas City, MO | 4.4                | High      |
+| Springfield     | Springfield, MO | 4.3                | High      |
+| Chicago         | Chicago, IL     | 4.1                | Moderate  |
+| Denver          | Denver, CO      | 5.4                | Very High |
+| Phoenix         | Phoenix, AZ     | 6.3                | Very High |
+| Los Angeles     | Los Angeles, CA | 5.9                | Very High |
+| Seattle         | Seattle, WA     | 3.5                | Fair      |
+| Miami           | Miami, FL       | 5.2                | Very High |
+| Boston          | Boston, MA      | 3.9                | Fair      |
+| Atlanta         | Atlanta, GA     | 4.6                | High      |
+| Austin          | Austin, TX      | 5.1                | Very High |
 
 ### Solar Color Scale
 
@@ -125,6 +133,7 @@ Contains ~380 lines of modular JavaScript with:
 Added ~150 lines of integration code:
 
 - **UI Functions**:
+
   - `showSolarMap()` - Open modal & initialize
   - `closeSolarMap()` - Close modal & save state
   - `populateRegionDropdown()` - Load region options
@@ -135,6 +144,7 @@ Added ~150 lines of integration code:
   - `compareLocations()` - Comparison tool
 
 - **Chatbot Integration**:
+
   - Auto-trigger map when AI mentions "solar map"
   - Fallback rule-based triggers for map-related queries
   - Suggestion button in chat UI
@@ -162,16 +172,19 @@ Added 400+ lines of CSS:
 ### For Users
 
 1. **Open the Map**
+
    - Click the "📍 View Solar Map" suggestion button
    - Or mention "solar map", "map", "location", "sunlight" in chat
    - AI can also suggest the map naturally
 
 2. **Explore Regions**
+
    - Use region dropdown to jump to major cities
    - Or search by address/city name in search box
    - Heatmap updates dynamically
 
 3. **View Location Details**
+
    - Click anywhere on the map
    - Info popup shows:
      - Peak sun hours/day
@@ -181,11 +194,13 @@ Added 400+ lines of CSS:
    - Details also appear in right sidebar
 
 4. **Switch Views**
+
    - Click "🔥 Heatmap" for gradient visualization
    - Click "📍 Markers" to see individual data points
    - Legend shows color scale
 
 5. **Compare Areas**
+
    - Click on a location
    - See comparison with St. Louis average
    - Click "Compare My Area →" for detailed analysis
@@ -207,11 +222,11 @@ showSolarMap();
 
 ```javascript
 // Get data for a region
-const stLouisData = getSolarDataByRegion('st-louis-metro');
+const stLouisData = getSolarDataByRegion("st-louis-metro");
 console.log(stLouisData.solarHours); // 4.5
 
 // Search for a location
-const denver = searchSolarLocation('Denver');
+const denver = searchSolarLocation("Denver");
 console.log(denver.name); // 'Denver, Colorado'
 
 // Get all regions
@@ -253,22 +268,23 @@ loadMapPreferences();
 Add to `US_SOLAR_DATA` in `solarMap.js`:
 
 ```javascript
-US_SOLAR_DATA['my-region'] = {
-    name: 'My City, State',
-    center: { lat: 35.1234, lng: -88.5678 },
-    solarHours: 4.8,
-    data: [
-        { lat: 35.1234, lng: -88.5678, value: 4.8 },
-        // ... more points
-    ]
+US_SOLAR_DATA["my-region"] = {
+  name: "My City, State",
+  center: { lat: 35.1234, lng: -88.5678 },
+  solarHours: 4.8,
+  data: [
+    { lat: 35.1234, lng: -88.5678, value: 4.8 },
+    // ... more points
+  ],
 };
 ```
 
 ## 🔌 API Requirements
 
 ### Google Maps API
+
 - **Key**: Uses existing key from `script.js`
-- **Libraries**: 
+- **Libraries**:
   - `visualization` - For heatmap layers
   - `places` - For geocoding
 - **Permissions**:
@@ -277,6 +293,7 @@ US_SOLAR_DATA['my-region'] = {
   - Street View API (optional)
 
 ### Data Sources
+
 - Pre-loaded US solar irradiance data (public averages)
 - Can be extended with:
   - NREL Solar Resource Data API
@@ -304,22 +321,25 @@ US_SOLAR_DATA['my-region'] = {
 ## 🎨 Customization
 
 ### Change Default Center
+
 ```javascript
 // In solarMap.js
-SOLAR_MAP_CONFIG.defaultCenter = { lat: 40.7128, lng: -74.0060 }; // NYC
+SOLAR_MAP_CONFIG.defaultCenter = { lat: 40.7128, lng: -74.006 }; // NYC
 ```
 
 ### Adjust Heatmap Appearance
+
 ```javascript
 SOLAR_MAP_CONFIG.heatmapRadius = 50; // Larger radius
 SOLAR_MAP_CONFIG.heatmapOpacity = 0.8; // More transparent
 ```
 
 ### Modify Color Scale
+
 ```javascript
 // In solarMap.js
 SOLAR_COLOR_SCALE.high.range = [4.2, 5.5]; // New range
-SOLAR_COLOR_SCALE.high.color = '#FF6347'; // New color
+SOLAR_COLOR_SCALE.high.color = "#FF6347"; // New color
 ```
 
 ## 📈 Performance Optimizations
@@ -333,6 +353,7 @@ SOLAR_COLOR_SCALE.high.color = '#FF6347'; // New color
 ## 🧪 Testing Checklist
 
 ### Functionality
+
 - ✅ Modal opens/closes properly
 - ✅ Search finds locations
 - ✅ Heatmap displays correctly
@@ -344,6 +365,7 @@ SOLAR_COLOR_SCALE.high.color = '#FF6347'; // New color
 - ✅ localStorage saves/restores state
 
 ### Browser Compatibility
+
 - ✅ Chrome (latest)
 - ✅ Firefox (latest)
 - ✅ Safari (latest)
@@ -352,6 +374,7 @@ SOLAR_COLOR_SCALE.high.color = '#FF6347'; // New color
 - ✅ Chrome Mobile (Android)
 
 ### Responsiveness
+
 - ✅ Desktop layout (1440x900)
 - ✅ Tablet layout (768x1024)
 - ✅ Mobile layout (375x667)
@@ -359,6 +382,7 @@ SOLAR_COLOR_SCALE.high.color = '#FF6347'; // New color
 - ✅ Gestures (pan, zoom, pinch) work
 
 ### Integration
+
 - ✅ Chatbot can open map
 - ✅ AI suggests map naturally
 - ✅ Suggestion buttons work
@@ -369,6 +393,7 @@ SOLAR_COLOR_SCALE.high.color = '#FF6347'; // New color
 ## 🚀 Deployment
 
 ### Firebase Deployment
+
 ```bash
 # Commit changes
 git add -A
@@ -382,12 +407,14 @@ firebase deploy --project klppp-4de82
 ```
 
 ### Live URLs
+
 - **Main**: https://klppp-4de82.web.app
 - **GitHub Pages**: https://venadiunn.github.io/Solar_Energy_Chatbot_V2/
 
 ## 🔮 Future Enhancements
 
 ### Phase 2: Enhanced Visualization
+
 - [ ] Real-time weather overlay
 - [ ] Temperature data layer
 - [ ] Cloud cover predictions
@@ -395,6 +422,7 @@ firebase deploy --project klppp-4de82
 - [ ] Satellite imagery integration
 
 ### Phase 3: Advanced Features
+
 - [ ] Google Project Sunroof data
 - [ ] Roof-specific shading analysis
 - [ ] Neighborhood solar adoption stats
@@ -402,6 +430,7 @@ firebase deploy --project klppp-4de82
 - [ ] Timeline: historical trends
 
 ### Phase 4: User Tools
+
 - [ ] Draw polygon for area estimation
 - [ ] Multi-location comparison table
 - [ ] Export map as PDF/image
@@ -410,6 +439,7 @@ firebase deploy --project klppp-4de82
 - [ ] AR view for roof analysis
 
 ### Phase 5: Data Integration
+
 - [ ] Real-time NREL data API
 - [ ] Weather forecast overlay
 - [ ] Utility rate data
@@ -419,6 +449,7 @@ firebase deploy --project klppp-4de82
 ## 📞 Support & Feedback
 
 For issues, suggestions, or feature requests:
+
 1. Check existing GitHub issues
 2. Test in latest browser version
 3. Clear browser cache (Ctrl+Shift+Delete)
