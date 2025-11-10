@@ -11,7 +11,8 @@ const SOLAR_MAP_CONFIG = {
     mapId: 'solarRadianceMap',
     apiKey: 'AIzaSyARclNvgJwnomgTUSTr7n6DpiltNsX246g', // Google Maps API key
     maxQueryLength: 200,
-    enableHeatmap: true,
+    enableHeatmap: false,  // DISABLED - Heatmap deprecated in May 2025
+    useSimpleMarkers: true, // NEW - Use simple marker-based visualization instead
     heatmapRadius: 40,
     heatmapOpacity: 0.7
 };
@@ -236,19 +237,30 @@ function loadMapPreferences() {
 function saveMapPreferences() {
     if (!solarMapState.mapInstance) return;
     
-    const center = solarMapState.mapInstance.getCenter();
-    const prefs = {
-        lastLocation: {
-            lat: center.lat(),
-            lng: center.lng(),
-            zoom: solarMapState.mapInstance.getZoom()
-        },
-        currentRegion: solarMapState.currentRegion,
-        layerType: solarMapState.currentLayerType,
-        timestamp: new Date().toISOString()
-    };
-    
-    localStorage.setItem('solarbot_map_prefs', JSON.stringify(prefs));
+    try {
+        const center = solarMapState.mapInstance.getCenter();
+        
+        // Safety check for center coordinates
+        if (!center || typeof center.lat !== 'function' || typeof center.lng !== 'function') {
+            console.warn('Map center not available, skipping preference save');
+            return;
+        }
+        
+        const prefs = {
+            lastLocation: {
+                lat: center.lat(),
+                lng: center.lng(),
+                zoom: solarMapState.mapInstance.getZoom()
+            },
+            currentRegion: solarMapState.currentRegion,
+            layerType: solarMapState.currentLayerType,
+            timestamp: new Date().toISOString()
+        };
+        
+        localStorage.setItem('solarbot_map_prefs', JSON.stringify(prefs));
+    } catch (error) {
+        console.error('Error saving map preferences:', error);
+    }
 }
 
 /**
@@ -376,9 +388,14 @@ function initializeSolarMap(containerId) {
         // Initialize geocoder
         solarMapState.geocoder = new google.maps.Geocoder();
         
-        // Add heatmap
+        // Add heatmap (if enabled and not deprecated)
         if (SOLAR_MAP_CONFIG.enableHeatmap) {
-            addHeatmapLayer();
+            try {
+                addHeatmapLayer();
+            } catch (heatmapError) {
+                console.warn('Heatmap not available (may be deprecated):', heatmapError);
+                // Continue without heatmap
+            }
         }
         
         // Add click listener
@@ -391,6 +408,12 @@ function initializeSolarMap(containerId) {
         return solarMapState.mapInstance;
     } catch (error) {
         console.error('Error initializing Solar Map:', error);
+        
+        // Check if it's a billing error
+        if (error.message && error.message.includes('billing')) {
+            console.warn('Google Maps API billing not enabled - falling back to data view');
+        }
+        
         return null;
     }
 }

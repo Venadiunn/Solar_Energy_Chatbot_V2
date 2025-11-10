@@ -1066,14 +1066,31 @@ function showSolarMap() {
     }
 
     try {
+        // Check if Google Maps is available
+        if (!window.google || !window.google.maps) {
+            console.warn('Google Maps API not available');
+            showToast('Google Maps is loading. Please try again in a moment.');
+            setTimeout(() => showSolarMap(), 2000);
+            return;
+        }
+        
         modal.classList.add('active');
         
         // Initialize map if not already done
-        if (!solarMapState.isInitialized && window.google && window.google.maps) {
-            initializeSolarMap('solarMapCanvas');
+        if (!solarMapState.isInitialized) {
+            const mapResult = initializeSolarMap('solarMapCanvas');
+            if (!mapResult) {
+                console.warn('Failed to initialize map');
+                showToast('Map could not be initialized. Showing data view instead.');
+                return;
+            }
         } else if (solarMapState.mapInstance) {
             // Trigger map resize if it was already initialized
-            google.maps.event.trigger(solarMapState.mapInstance, 'resize');
+            try {
+                google.maps.event.trigger(solarMapState.mapInstance, 'resize');
+            } catch (e) {
+                console.error('Error triggering map resize:', e);
+            }
         }
         
         // Populate region dropdown
@@ -1082,7 +1099,8 @@ function showSolarMap() {
         console.log('Solar map opened');
     } catch (error) {
         console.error('Error opening solar map:', error);
-        showToast('Could not open solar map. Please try again.');
+        modal.classList.remove('active');
+        showToast('Could not open solar map. Showing data view instead.');
     }
 }
 
