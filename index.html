@@ -141,6 +141,88 @@
         </div>
     </div>
 
+    <!-- Solar Map Modal -->
+    <div class="solar-map-modal" id="solarMapModal">
+        <div class="solar-map-container">
+            <div class="solar-map-header">
+                <div class="solar-map-title">
+                    <span class="solar-map-icon">📍</span>
+                    <h2>Interactive Solar Map</h2>
+                </div>
+                <button class="solar-map-close" onclick="closeSolarMap()">✕</button>
+            </div>
+            
+            <div class="solar-map-controls">
+                <div class="map-search-box">
+                    <input type="text" id="solarMapSearch" placeholder="Search city or address..." class="map-search-input">
+                    <button class="map-search-btn" onclick="searchMapLocation()">Search</button>
+                </div>
+                
+                <div class="map-region-select">
+                    <select id="solarRegionSelect" onchange="changeMapRegion(this.value)" class="region-dropdown">
+                        <option value="">Jump to region...</option>
+                    </select>
+                </div>
+
+                <div class="map-layer-toggle">
+                    <button class="layer-btn active" onclick="toggleMapLayer('heatmap')" id="heatmapLayerBtn">🔥 Heatmap</button>
+                    <button class="layer-btn" onclick="toggleMapLayer('markers')" id="markersLayerBtn">📍 Markers</button>
+                </div>
+            </div>
+
+            <div class="solar-map-content">
+                <div class="solar-map-wrapper">
+                    <div id="solarMapCanvas" class="solar-map-canvas"></div>
+                </div>
+
+                <div class="solar-map-sidebar">
+                    <div class="map-legend">
+                        <div class="legend-title">Solar Irradiance Scale</div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #8B0000;"></div>
+                            <span>Very High (5.5+ kWh/m²/day)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #FF4500;"></div>
+                            <span>High (4.5-5.4)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #FFD700;"></div>
+                            <span>Moderate (4.0-4.4)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #87CEEB;"></div>
+                            <span>Fair (3.0-3.9)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #ADD8E6;"></div>
+                            <span>Low (&lt;3.0)</span>
+                        </div>
+                    </div>
+
+                    <div class="map-info-panel" id="mapInfoPanel">
+                        <div class="info-placeholder">Click on the map to see location details</div>
+                    </div>
+
+                    <div class="map-comparison">
+                        <div class="comparison-title">📊 St. Louis Average</div>
+                        <div class="comparison-stat">
+                            <span>Peak Sun Hours:</span>
+                            <strong>4.5 hrs/day</strong>
+                        </div>
+                        <div class="comparison-stat">
+                            <span>Category:</span>
+                            <strong>High</strong>
+                        </div>
+                        <button class="compare-btn" onclick="compareLocations()">Compare My Area →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js?v=2.0"></script>
+    <script src="solarMap.js?v=2.0"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARclNvgJwnomgTUSTr7n6DpiltNsX246g&libraries=visualization,places&callback=onGoogleMapsLoaded"></script>
 </body>
 </html>

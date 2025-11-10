@@ -49,12 +49,22 @@ KEY FACTS ABOUT ST. LOUIS & SOLAR:
 - Snow slides off quickly - not a real problem
 - Financing available with $0 down
 
+SOLAR MAP FEATURE:
+- I have access to an Interactive Solar Map tool that shows solar irradiance data across the US
+- When users ask about sunlight, location-specific solar potential, comparing regions, or viewing solar data by area, naturally suggest: "Want to see how much sunlight your specific area gets? I can show you our Interactive Solar Map!"
+- Keywords that warrant mentioning the map: "sunlight", "peak sun", "location", "hours", "region", "area", "map", "comparison", "potential", "irradiance"
+- The map shows: peak sun hours/day, recommended system size for that location, estimated monthly generation
+- Users can click on any location to see detailed solar data
+- Frame it naturally in conversation, not as a forced tool
+
 WHAT YOU DO:
 - Answer solar energy questions in detail and with examples
 - Help people understand costs, savings, incentives
 - Address concerns honestly (maintenance, weather, moving, roof issues)
 - Provide St. Louis-specific info whenever relevant
-- Suggest tools (calculator, weather, contact) naturally when they fit the conversation
+- Suggest the Solar Map tool naturally when discussing geographic/location solar potential
+- Suggest calculator when discussing financial scenarios
+- Suggest weather tool when discussing weather/clouds/conditions
 - Acknowledge you're an AI if asked - be transparent
 
 WHAT NOT TO DO:
@@ -67,8 +77,8 @@ WHAT NOT TO DO:
 TONE EXAMPLES:
 - Good: "Yeah, a lot of people wonder about winter! The cool thing is cold temperatures actually make solar panels more efficient. Plus with St. Louis's 4.5 peak sun hours daily, you're producing solid power even in winter."
 - Bad: "Let me show you the weather widget to demonstrate St. Louis solar conditions."
-- Good: "Financing is a big question! Most people do $0 down financing now. After the 30% federal tax credit and 5% Missouri rebate, your actual upfront cost drops to about 35% of the system price."
-- Bad: "Financing options are available. Tax credits exist."
+- Good: "Solar potential really varies by location! Want to see how much sunlight your specific area gets? I can show you our Interactive Solar Map - you can click anywhere to see peak sun hours and estimated generation for that spot."
+- Bad: "Let me force you to use the solar map."
 
 IF ASKED IF YOU'RE AN AI:
 - Be honest and straightforward
@@ -76,6 +86,7 @@ IF ASKED IF YOU'RE AN AI:
 - Don't be defensive or evasive about it
 
 Remember: Be helpful, be real, be enthusiastic about solar without being fake. If you don't know something, say so. Keep responses 1-3 sentences usually, longer if explaining something complex.`;
+
 
 // Users
 const USERS = {
@@ -886,6 +897,9 @@ async function getAIResponse(userMessage) {
             if (lowerResponse.includes('contact form') || lowerResponse.includes('consultation') || lowerResponse.includes('schedule')) {
                 setTimeout(function() { openContactForm(); }, 800);
             }
+            if (lowerResponse.includes('solar map') || lowerResponse.includes('interactive map')) {
+                setTimeout(function() { showSolarMap(); }, 800);
+            }
             
             return aiResponse;
         } else {
@@ -911,6 +925,11 @@ function getResponse(userMessage) {
     if (/calculat|savings|estimate|how much.*save/i.test(msg)) {
         setTimeout(function() { showCalculator(); }, 500);
         return "Great! Let me pull up the solar savings calculator for you.";
+    }
+
+    if (/map|solar.*area|sunlight.*location|potential.*region|hours.*location|peak sun.*where/i.test(msg)) {
+        setTimeout(function() { showSolarMap(); }, 500);
+        return "Perfect! Let me show you our Interactive Solar Map so you can see solar potential by location.";
     }
     
     if (/schedule|appointment|consult|book|meet|visit/i.test(msg)) {
@@ -956,27 +975,34 @@ function updateSuggestions(context) {
             { display: 'Financing options', query: 'How can I afford solar panels?' },
             { display: 'Calculate savings', action: function() { showCalculator(); } },
             { display: 'Payback period', query: 'How long until solar pays for itself?' },
-            { display: 'Contact us', action: function() { openContactForm(); } }
+            { display: 'View Solar Map', action: function() { showSolarMap(); } }
         ];
     } else if (context.includes('schedule') || context.includes('appointment')) {
         suggestions = [
             { display: 'Fill contact form', action: function() { openContactForm(); } },
             { display: 'More questions', query: 'I have more questions first' },
             { display: 'Costs', query: 'How much do solar panels cost?' },
-            { display: 'Calculator', action: function() { showCalculator(); } }
+            { display: 'View Solar Map', action: function() { showSolarMap(); } }
         ];
     } else if (context.includes('calculator') || context.includes('savings')) {
         suggestions = [
             { display: 'Book appointment', query: 'Schedule a consultation' },
             { display: 'Why solar?', query: 'Why should I get solar panels?' },
-            { display: 'Financing', query: 'What financing options are available?' },
+            { display: 'View Solar Map', action: function() { showSolarMap(); } },
             { display: 'Contact', action: function() { openContactForm(); } }
+        ];
+    } else if (context.includes('location') || context.includes('area') || context.includes('sunlight') || context.includes('map')) {
+        suggestions = [
+            { display: '📍 View Solar Map', action: function() { showSolarMap(); } },
+            { display: 'Calculate savings', action: function() { showCalculator(); } },
+            { display: 'Learn more', query: 'Tell me about solar benefits' },
+            { display: 'Schedule visit', query: 'I want to schedule an appointment' }
         ];
     } else {
         suggestions = [
             { display: 'Why solar?', query: 'Why should I get solar panels?' },
             { display: 'Costs', query: 'How much do solar panels cost?' },
-            { display: 'Book appointment', query: 'Schedule a consultation' },
+            { display: '📍 View Solar Map', action: function() { showSolarMap(); } },
             { display: 'Calculate savings', action: function() { showCalculator(); } }
         ];
     }
@@ -1023,3 +1049,311 @@ function showToast(message) {
 function trackEvent(eventName, eventData) {
     console.log('Event:', eventName, eventData);
 }
+
+// ==================== SOLAR MAP INTEGRATION ====================
+
+/**
+ * Show the Interactive Solar Map modal
+ */
+function showSolarMap() {
+    const modal = document.getElementById('solarMapModal');
+    if (!modal) {
+        console.error('Solar map modal not found');
+        return;
+    }
+
+    try {
+        modal.classList.add('active');
+        
+        // Initialize map if not already done
+        if (!solarMapState.isInitialized && window.google && window.google.maps) {
+            initializeSolarMap('solarMapCanvas');
+        } else if (solarMapState.mapInstance) {
+            // Trigger map resize if it was already initialized
+            google.maps.event.trigger(solarMapState.mapInstance, 'resize');
+        }
+        
+        // Populate region dropdown
+        populateRegionDropdown();
+        
+        console.log('Solar map opened');
+    } catch (error) {
+        console.error('Error opening solar map:', error);
+        showToast('Could not open solar map. Please try again.');
+    }
+}
+
+/**
+ * Close the Solar Map modal
+ */
+function closeSolarMap() {
+    const modal = document.getElementById('solarMapModal');
+    if (modal) {
+        modal.classList.remove('active');
+        saveMapPreferences();
+        console.log('Solar map closed');
+    }
+}
+
+/**
+ * Populate the region dropdown with available regions
+ */
+function populateRegionDropdown() {
+    const select = document.getElementById('solarRegionSelect');
+    if (!select || select.innerHTML.length > 30) return; // Already populated
+    
+    const regions = getAllSolarRegions();
+    regions.forEach(function(region) {
+        const option = document.createElement('option');
+        option.value = region.id;
+        option.textContent = `${region.name} (${region.solarHours} hrs/day)`;
+        select.appendChild(option);
+    });
+}
+
+/**
+ * Change map region from dropdown
+ */
+function changeMapRegion(regionKey) {
+    if (!regionKey) return;
+    
+    const regionData = getSolarDataByRegion(regionKey);
+    if (!regionData || !solarMapState.mapInstance) return;
+    
+    solarMapState.currentRegion = regionKey;
+    
+    // Center map on region
+    solarMapState.mapInstance.setCenter(regionData.center);
+    solarMapState.mapInstance.setZoom(8);
+    
+    // Update heatmap
+    if (SOLAR_MAP_CONFIG.enableHeatmap) {
+        addHeatmapLayer();
+    }
+    
+    saveMapPreferences();
+    console.log('Changed to region:', regionKey);
+}
+
+/**
+ * Search for location on map
+ */
+function searchMapLocation() {
+    const input = document.getElementById('solarMapSearch');
+    const query = input.value.trim();
+    
+    if (!query) {
+        showToast('Please enter a city or address');
+        return;
+    }
+    
+    // Try to find in solar data first
+    const regionData = searchSolarLocation(query);
+    if (regionData) {
+        if (solarMapState.mapInstance) {
+            solarMapState.mapInstance.setCenter(regionData.center);
+            solarMapState.mapInstance.setZoom(8);
+        }
+        input.value = '';
+        return;
+    }
+    
+    // Use geocoder for custom locations
+    if (solarMapState.geocoder && solarMapState.mapInstance) {
+        solarMapState.geocoder.geocode({ address: query }, function(results, status) {
+            if (status === 'OK' && results.length > 0) {
+                const location = results[0].geometry.location;
+                solarMapState.mapInstance.setCenter(location);
+                solarMapState.mapInstance.setZoom(10);
+                
+                // Find nearest solar region
+                const nearest = findNearestSolarRegion(location.lat(), location.lng());
+                if (nearest) {
+                    const locInfo = generateLocationInfoPopup(
+                        location.lat(),
+                        location.lng(),
+                        nearest.solarHours,
+                        results[0].formatted_address
+                    );
+                    displayLocationInfo(locInfo);
+                }
+                
+                input.value = '';
+            } else {
+                showToast('Location not found. Try another search.');
+            }
+        });
+    }
+}
+
+/**
+ * Display location info in the sidebar
+ */
+function displayLocationInfo(locInfo) {
+    const panel = document.getElementById('mapInfoPanel');
+    if (!panel) return;
+    
+    const systemSize = calculateSystemSizeForLocation(locInfo.solarHours, 2000);
+    const monthlyGen = estimateMonthlyGeneration(systemSize, locInfo.solarHours);
+    
+    const html = `
+        <div class="location-info-detail">
+            <span class="info-label">Location:</span>
+            <span class="info-value">${locInfo.name}</span>
+        </div>
+        <div class="location-info-detail">
+            <span class="info-label">Peak Sun Hours:</span>
+            <span class="info-value" style="color: ${locInfo.color};">${locInfo.solarHours} hrs/day</span>
+        </div>
+        <div class="location-info-detail">
+            <span class="info-label">Category:</span>
+            <span class="info-value">${locInfo.category}</span>
+        </div>
+        <div class="location-info-detail">
+            <span class="info-label">Recommended System:</span>
+            <span class="info-value">${systemSize} kW</span>
+        </div>
+        <div class="location-info-detail">
+            <span class="info-label">Monthly Gen:</span>
+            <span class="info-value">${monthlyGen.toLocaleString()} kWh</span>
+        </div>
+    `;
+    
+    panel.innerHTML = html;
+}
+
+/**
+ * Toggle between heatmap and markers layer
+ */
+function toggleMapLayer(layerType) {
+    if (!solarMapState.mapInstance) return;
+    
+    solarMapState.currentLayerType = layerType;
+    
+    const heatmapBtn = document.getElementById('heatmapLayerBtn');
+    const markersBtn = document.getElementById('markersLayerBtn');
+    
+    if (layerType === 'heatmap') {
+        if (heatmapBtn) heatmapBtn.classList.add('active');
+        if (markersBtn) markersBtn.classList.remove('active');
+        
+        // Hide markers, show heatmap
+        if (solarMapState.heatmapInstance) {
+            solarMapState.heatmapInstance.setMap(solarMapState.mapInstance);
+        } else {
+            addHeatmapLayer();
+        }
+        
+        // Hide markers
+        solarMapState.markers.forEach(function(marker) {
+            marker.setMap(null);
+        });
+    } else if (layerType === 'markers') {
+        if (markersBtn) markersBtn.classList.add('active');
+        if (heatmapBtn) heatmapBtn.classList.remove('active');
+        
+        // Hide heatmap
+        if (solarMapState.heatmapInstance) {
+            solarMapState.heatmapInstance.setMap(null);
+        }
+        
+        // Show markers
+        const regionData = getSolarDataByRegion(solarMapState.currentRegion);
+        if (regionData) {
+            regionData.data.forEach(function(point) {
+                const marker = new google.maps.Marker({
+                    position: { lat: point.lat, lng: point.lng },
+                    map: solarMapState.mapInstance,
+                    title: `${point.value} hrs/day`,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 8,
+                        fillColor: getSolarColorForValue(point.value),
+                        fillOpacity: 0.8,
+                        strokeColor: '#fff',
+                        strokeWeight: 2
+                    }
+                });
+                solarMapState.markers.push(marker);
+                
+                marker.addListener('click', function() {
+                    showLocationInfo(point.lat, point.lng, `Location (${point.value} hrs/day)`, point.value);
+                });
+            });
+        }
+    }
+    
+    saveMapPreferences();
+}
+
+/**
+ * Compare user's location with St. Louis average
+ */
+function compareLocations() {
+    if (!solarMapState.selectedLocation) {
+        showToast('Please click on a location on the map first');
+        return;
+    }
+    
+    const stLouisHours = 4.5;
+    const selectedHours = solarMapState.selectedLocation.solarHours;
+    const difference = selectedHours - stLouisHours;
+    const percentDiff = ((difference / stLouisHours) * 100).toFixed(1);
+    
+    let comparison = '';
+    if (difference > 0) {
+        comparison = `This location gets ${Math.abs(percentDiff)}% MORE sunlight than St. Louis (${selectedHours} vs 4.5 hrs/day).`;
+    } else if (difference < 0) {
+        comparison = `This location gets ${Math.abs(percentDiff)}% LESS sunlight than St. Louis (${selectedHours} vs 4.5 hrs/day).`;
+    } else {
+        comparison = `This location matches St. Louis average (${selectedHours} hrs/day).`;
+    }
+    
+    const systemSize = calculateSystemSizeForLocation(selectedHours, 2000);
+    const monthlyGen = estimateMonthlyGeneration(systemSize, selectedHours);
+    const stLouisMonthly = estimateMonthlyGeneration(5, stLouisHours); // Assuming 5kW in St. Louis
+    
+    const message = `📊 Solar Comparison:\n\n${comparison}\n\nFor a typical 2000 sq ft home:\n- Recommended system: ${systemSize} kW\n- Monthly generation: ${monthlyGen} kWh\n- Better fit for solar? ${selectedHours > stLouisHours ? 'Yes!' : 'Still good!'}`;
+    
+    addMessage(message, false);
+}
+
+/**
+ * Handle auto-response when user clicks map location
+ */
+function triggerSolarMapAutoResponse(locationName, solarHours) {
+    if (!state.currentChatId) return;
+    
+    const systemSize = calculateSystemSizeForLocation(solarHours, 2000);
+    const monthlyGen = estimateMonthlyGeneration(systemSize, solarHours);
+    const category = getSolarCategoryLabel(solarHours);
+    
+    const response = `📍 **${locationName}**\n\n` +
+        `Peak sun hours: **${solarHours} hrs/day** (${category})\n\n` +
+        `For a typical 2,000 sq ft home, I'd recommend a **${systemSize} kW system**. ` +
+        `That would generate roughly **${monthlyGen} kWh per month** - enough to offset most of your electric bill!\n\n` +
+        `Interested in learning more about solar potential in this area?`;
+    
+    addMessage(response, false);
+    
+    saveCurrentChat();
+}
+
+/**
+ * Google Maps API loaded callback
+ */
+function onGoogleMapsLoaded() {
+    console.log('Google Maps API loaded successfully');
+    
+    // Try to initialize map if modal is open
+    const modal = document.getElementById('solarMapModal');
+    if (modal && modal.classList.contains('active')) {
+        setTimeout(function() {
+            if (!solarMapState.isInitialized) {
+                initializeSolarMap('solarMapCanvas');
+            }
+        }, 100);
+    }
+}
+
+
